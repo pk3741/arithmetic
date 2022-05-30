@@ -1,1 +1,1 @@
-arithmetic
+Arithmetic encoding/decoding algorithm
