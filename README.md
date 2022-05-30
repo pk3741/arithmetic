@@ -1,1 +1,5 @@
-Arithmetic encoding/decoding algorithm
+# Arithmetic encoding/decoding algorithm.
+## TODO:
+* cleanup 
+* refactoring 
+* maintainability improvement
