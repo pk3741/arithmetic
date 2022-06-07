@@ -3,122 +3,180 @@
 #include <vector>
 #include <utility>
 
-int main()
+struct Probability
 {
-	std::string alf;
-	std::vector<float>prob;
+public:
+	char letter;
+	float l;
+	float r;
+	Probability() : letter('\0'), l(0), r(0) {}
+	Probability(char nletter, float nl, float nr) : letter(nletter), l(nl), r(nr) {}
+};
 
-	std::cout << "Alphabet: ";
-	std::cin >> alf;
-	std::cout << "Probabilities: \n";
-	for (size_t i = 0; i < alf.size(); i++)
-	{
-		float probx = 0.0;
-		std::cout << alf[i] << ": ";
-		std::cin >> probx;
-		prob.push_back(probx);
-
-	}
-	int choose = 0;
-	std::cout << "\nEncoding(0) or decoding(1): ";
-	std::cin >> choose;
-
-	std::vector<std::pair<float, float>> ranges;
-	std::vector<std::pair<float, float>> rangesnew;
-	float l = 0, r = 0;
+Probability getRangeForLetter(char letter, std::vector<Probability> &prob)
+{
 	for (size_t i = 0; i < prob.size(); i++)
 	{
-		r = l + prob[i];
-		ranges.push_back(std::pair<float, float>(l, r));
-		l = r;
+		if (prob[i].letter == letter)
+		{
+			return prob[i];
+		}
 	}
+	return Probability('x', 9999, 9999);
+}
 
-	if (choose == 0)
+Probability getRangeForNumber(float number, std::vector<Probability>& prob)
+{
+	for (size_t i = 0; i < prob.size(); i++)
 	{
+		if (prob[i].l <= number && prob[i].r > number)
+			return prob[i];
+	}
+	return Probability('x', 9999, 9999);
+}
 
-		std::cout << "Initial ranges: " << std::endl;
-		for (size_t i = 0; i < ranges.size(); i++)
+int main()
+{
+	int choose = 0;
+	std::cout << "Kodujemy(0) czy dekodujemy(1)?: ";
+	std::cin >> choose;
+	
+	if (choose==0)
+	{
+		// ABCD, ABBC, 0.4 0.3 0.1 0.2 - 0.2332,02368
+		std::string message;
+		std::cout << "Podaj wiadomosc: ";
+		std::cin >> message;
+		std::string alf;
+		std::vector<float>prob;
+
+		std::cout << "Podaj alfabet: ";
+		std::cin >> alf;
+		std::cout << "Podaj prawdopodobienstwa: \n";
+		for (size_t i = 0; i < alf.size(); i++)
 		{
-			std::cout << "subrange " << i << ": [" << ranges[i].first << ";" << ranges[i].second << "]" << std::endl;
+			float probx = 0.0;
+			std::cout << alf[i] << ": ";
+			std::cin >> probx;
+			prob.push_back(probx);
 		}
+
+		float l = 0, r = 0;
+		std::vector<Probability> ranges;
 		std::cout << "\n";
-		// Encoding
-		for (size_t i = 0; i < ranges.size(); i++)
+		for (size_t i = 0; i < prob.size(); i++)
 		{
-			std::cout << "Step: " << i << std::endl;
-			float start = ranges[i].first;
-			float end = ranges[i].second;
-			float R = end - start;
-			std::cout << "R: " << R << std::endl;
-			float substart = start;
-			for (size_t j = 0; j < ranges.size(); j++)
+			r = l + prob[i];
+			Probability n1;
+			n1.l = l;
+			n1.r = r;
+			n1.letter = alf[i];
+			ranges.push_back(n1);
+			std::cout << n1.letter << ": [" << n1.l << ";" << n1.r << "]" << std::endl;
+			l = r;
+		}
+		std::cout << "\n\n";
+
+		for (size_t i = 0; i < message.size(); i++)
+		{
+			std::cout << "--------------------------------------------\n";
+			std::cout << "Kodowany symbol: " << message[i] << std::endl;
+			Probability actualRange = getRangeForLetter(message[i], ranges);
+			std::vector<Probability> newRanges;
+			std::cout << "rangessize: " << ranges.size() << std::endl;
+
+			float l = actualRange.l;
+			float r = actualRange.r;
+			std::cout << "Zaczynajac od: " << l << " " << r << std::endl;
+			float range = r - l;
+			std::cout << "Range: " << range << std::endl;
+
+			for (int j = 0; j < prob.size(); j++)
 			{
-				ranges[j].first = substart;
-				ranges[j].second = substart + prob[j] * R;
-				substart = ranges[j].second;
+				r = l + range * prob[j];
+				std::cout << ranges[j].letter << " " << l << " " << r << std::endl;
+				Probability newProb;
+				newProb.r = r;
+				newProb.l = l;
+				newProb.letter = ranges[j].letter;
+				newRanges.push_back(newProb);
+				l = r;
 			}
-
-
-			for (size_t i = 0; i < ranges.size(); i++)
-			{
-				std::cout << "subrange " << i << ": [" << ranges[i].first << ";" << ranges[i].second << "]" << std::endl;
-			}
-
-			std::cout << "\n";
+			ranges = newRanges;
 		}
 
-		std::cout << "Encoded: " << (ranges.front().first + ranges.back().second) / 2 << std::endl;
-		std::cout << "Encoded range: [" << ranges.front().first << "; " << ranges.back().second << "]" << std::endl;
+		std::cout << "\nWynik: [" << ranges.front().l << ";" << ranges.back().r << "]" << std::endl;
 	}
 	else if (choose == 1)
 	{
-		std::string decoded;
-		float value = 0;
-		std::cout << "Value: ";
-		std::cin >> value;
-		// Encoding
+		// ABCD, ABBC, 0.4 0.3 0.1 0.2 - 0.2332,02368
+		std::string message = "";
+		std::string alf;
+		std::vector<float>prob;
 
-		std::cout << "Initial ranges: " << std::endl;
-		for (size_t i = 0; i < ranges.size(); i++)
+		std::cout << "Podaj alfabet: ";
+		std::cin >> alf;
+		std::cout << "Podaj prawdopodobienstwa: \n";
+		for (size_t i = 0; i < alf.size(); i++)
 		{
-			std::cout << "subrange " << i << ": [" << ranges[i].first << ";" << ranges[i].second << "]" << std::endl;
+			float probx = 0.0;
+			std::cout << alf[i] << ": ";
+			std::cin >> probx;
+			prob.push_back(probx);
 		}
+		int length = 0;
+		std::cout << "Podaj dlugosc komunikatu: ";
+		std::cin >> length;
+
+		float xka = 0;
+		std::cout << "Podaj liczbe dekodujaca: \n";
+		std::cin >> xka;
+
+		float l = 0, r = 0;
+		std::vector<Probability> ranges;
 		std::cout << "\n";
-		for (size_t i = 0; i < ranges.size(); i++)
+		for (size_t i = 0; i < prob.size(); i++)
 		{
-			std::cout << "Step: " << i << std::endl;
-			float start = ranges[i].first;
-			float end = ranges[i].second;
-			float R = end - start;
-			std::cout << "R: " << R << std::endl;
-			float substart = start;
-			for (size_t j = 0; j < ranges.size(); j++)
-			{
-				ranges[j].first = substart;
-				ranges[j].second = substart + prob[j] * R;
-				substart = ranges[j].second;
-			}
-
-
-			for (size_t i = 0; i < ranges.size(); i++)
-			{
-				std::cout << "subrange " << i << ": [" << ranges[i].first << ";" << ranges[i].second << "]" << std::endl;
-			}
-			if ((ranges.front().first < value) && (value < ranges.back().second))
-			{
-				std::cout << "Value " << value << " falls within " << ranges.front().first << ":" << ranges.back().second << " and '" << alf[i] << "' appears in decoded message" << std::endl;
-				decoded += alf[i];
-			}
-			else
-			{
-				std::cout << "Value " << value << " not falls within " << ranges.front().first << ":" << ranges.back().second << " and no letter appears in decoded message" << std::endl;
-			}
-
-			std::cout << "\n";
+			r = l + prob[i];
+			Probability n1;
+			n1.l = l;
+			n1.r = r;
+			n1.letter = alf[i];
+			ranges.push_back(n1);
+			std::cout << n1.letter << ": [" << n1.l << ";" << n1.r << "]" << std::endl;
+			l = r;
 		}
-		std::cout << "Decoded message: " << decoded << std::endl;
+
+		std::string output = "";
+
+		Probability n1;
+		for (int i = 0; i < length; i++)
+		{
+			n1 = getRangeForNumber(xka, ranges);
+			output += n1.letter;
+			std::vector<Probability> newRanges;
+			float l = n1.l;
+			float r = n1.r;
+			float range = r - l;
+
+			for (int j = 0; j < prob.size(); j++)
+			{
+				r = l + range * prob[j];
+				std::cout << ranges[j].letter << " " << l << " " << r << std::endl;
+				Probability newProb;
+				newProb.r = r;
+				newProb.l = l;
+				newProb.letter = ranges[j].letter;
+				newRanges.push_back(newProb);
+				l = r;
+			}
+			ranges = newRanges;
+		}
+		std::cout << "Output: " << output << std::endl;
+		
+		
 
 	}
+
+
 }
-
-
